@@ -7,6 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.helpers.selector import selector
 from homeassistant.const import (
     CONF_ACCESS_TOKEN,
     CONF_AUTHENTICATION,
@@ -20,10 +21,9 @@ from python_frank_energie import FrankEnergie
 from python_frank_energie.frank_energie import FrankCountry
 from python_frank_energie.exceptions import AuthException
 
-CONF_COUNTRY_NETHERLANDS = "Netherlands"
-CONF_COUNTRY_BELGIUM = "Belgium"
 
-from .const import DOMAIN
+
+from .const import DOMAIN, CONF_COUNTRY_NETHERLANDS, CONF_COUNTRY_BELGIUM
 
 _LOGGER = logging.getLogger(__name__)
 

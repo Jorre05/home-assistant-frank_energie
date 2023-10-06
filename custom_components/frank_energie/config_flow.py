@@ -81,6 +81,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_USERNAME: user_input[CONF_USERNAME],
             CONF_ACCESS_TOKEN: auth.authToken,
             CONF_TOKEN: auth.refreshToken,
+            CONF_COUNTRY: user_input[CONF_COUNTRY],
         }
 
         if self._reauth_entry:

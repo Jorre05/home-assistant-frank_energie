@@ -66,7 +66,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
             CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
         }
-        selectedCountry = frankCountries[user_input]
+        selectedCountry = frankCountries[user_input[CONF_COUNTRY]]
 
         async with FrankEnergie(country=selectedCountry) as api:
             try:

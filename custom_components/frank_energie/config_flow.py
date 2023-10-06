@@ -13,10 +13,15 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_TOKEN,
     CONF_USERNAME,
+    CONF_COUNTRY
 )
 from homeassistant.data_entry_flow import FlowResult
 from python_frank_energie import FrankEnergie
+from python_frank_energie.frank_energie import FrankCountry
 from python_frank_energie.exceptions import AuthException
+
+CONF_COUNTRY_NETHERLANDS = "Netherlands"
+CONF_COUNTRY_BELGIUM = "Belgium"
 
 from .const import DOMAIN
 
@@ -43,6 +48,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_USERNAME, default=username): str,
                     vol.Required(CONF_PASSWORD): str,
+                    vol.Required(CONF_COUNTRY, default=CONF_COUNTRY_NETHERLANDS): selector({
+                        "select": {
+                            "options": [CONF_COUNTRY_NETHERLANDS, CONF_COUNTRY_BELGIUM],
+                        }
+                    }),
                 }
             )
 
@@ -52,7 +62,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
             )
 
-        async with FrankEnergie() as api:
+        frankCountries = {
+            CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
+            CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
+        }
+        selectedCountry = frankCountries[user_input]
+
+        async with FrankEnergie(country=selectedCountry) as api:
             try:
                 auth = await api.login(
                     user_input[CONF_USERNAME], user_input[CONF_PASSWORD]

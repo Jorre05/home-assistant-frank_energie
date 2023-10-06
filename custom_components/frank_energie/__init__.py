@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ACCESS_TOKEN, Platform, CONF_TOKEN
+from homeassistant.const import CONF_ACCESS_TOKEN, Platform, CONF_TOKEN, CONF_COUNTRY
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from python_frank_energie import FrankEnergie
+from python_frank_energie.frank_energie import FrankCountry
 
-from .const import CONF_COORDINATOR, DOMAIN
+from .const import CONF_COORDINATOR, DOMAIN, CONF_COUNTRY_BELGIUM, CONF_COUNTRY_NETHERLANDS
 from .coordinator import FrankEnergieCoordinator
 
 PLATFORMS = [Platform.SENSOR]
@@ -20,11 +21,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry.unique_id is None or entry.unique_id == "frank_energie_component":
         hass.config_entries.async_update_entry(entry, unique_id=str("frank_energie"))
 
+    frankCountries = {
+            CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
+            CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
+        }
+    selectedCountry = frankCountries[entry.data.get(CONF_COUNTRY, CONF_COUNTRY_NETHERLANDS)]
+
     # Initialise the coordinator and save it as domain-data
     api = FrankEnergie(
         clientsession=async_get_clientsession(hass),
         auth_token=entry.data.get(CONF_ACCESS_TOKEN, None),
         refresh_token=entry.data.get(CONF_TOKEN, None),
+        country=selectedCountry,
     )
     frank_coordinator = FrankEnergieCoordinator(hass, entry, api)
 

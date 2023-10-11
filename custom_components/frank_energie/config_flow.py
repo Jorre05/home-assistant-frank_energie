@@ -36,6 +36,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._reauth_entry = None
+        self._selectedCountry = FrankCountry.Netherlands
 
     async def async_step_login(self, user_input=None, errors=None) -> FlowResult:
         """Handle login with credentials by user."""
@@ -48,11 +49,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_USERNAME, default=username): str,
                     vol.Required(CONF_PASSWORD): str,
-                    vol.Required(CONF_COUNTRY, default=CONF_COUNTRY_NETHERLANDS): selector({
-                        "select": {
-                            "options": [CONF_COUNTRY_NETHERLANDS, CONF_COUNTRY_BELGIUM],
-                        }
-                    }),
                 }
             )
 
@@ -62,13 +58,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
             )
 
-        frankCountries = {
-            CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
-            CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
-        }
-        selectedCountry = frankCountries[user_input[CONF_COUNTRY]]
-
-        async with FrankEnergie(country=selectedCountry) as api:
+        async with FrankEnergie(country=self._selectedCountry) as api:
             try:
                 auth = await api.login(
                     user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
@@ -81,7 +71,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_USERNAME: user_input[CONF_USERNAME],
             CONF_ACCESS_TOKEN: auth.authToken,
             CONF_TOKEN: auth.refreshToken,
-            CONF_COUNTRY: user_input[CONF_COUNTRY],
+            CONF_COUNTRY: self._selectedCountry,
         }
 
         if self._reauth_entry:
@@ -107,15 +97,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema = vol.Schema(
                 {
                     vol.Required(CONF_AUTHENTICATION): bool,
+                    vol.Required(CONF_COUNTRY, default=CONF_COUNTRY_NETHERLANDS): selector({
+                        "select": {
+                            "options": [CONF_COUNTRY_NETHERLANDS, CONF_COUNTRY_BELGIUM],
+                        }
+                    }),
                 }
             )
 
             return self.async_show_form(step_id="user", data_schema=data_schema)
 
+        frankCountries = {
+            CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
+            CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
+        }
+        self._selectedCountry = frankCountries[user_input[CONF_COUNTRY]]
+
         if user_input[CONF_AUTHENTICATION]:
             return await self.async_step_login()
 
-        data = {}
+        data = {
+            CONF_COUNTRY: self._selectedCountry,
+        }
 
         return await self._async_create_entry(data)
 

@@ -55,7 +55,7 @@ class FrankEnergieEntityDescription(SensorEntityDescription):
     authenticated: bool = False
     service_name: str | None = SERVICE_NAME_PRICES
     value_fn: Callable[[dict], StateType] = None
-    native_unit_of_measurement_fn = None
+    native_unit_of_measurement_fn: Callable[[dict], str] = None
     attr_fn: Callable[[dict], dict[str, StateType | list]] = lambda _: {}
 
 
@@ -372,9 +372,10 @@ class FrankEnergieSensor(CoordinatorEntity, SensorEntity):
 
         # Set correct unit for Gas prices
         try:
-            self.native_unit_of_measurement = self.entity_description.native_unit_of_measurement_fn(
-                self.coordinator.data
-            )
+            if self.entity_description.native_unit_of_measurement_fn is not None:
+                self.native_unit_of_measurement = self.entity_description.native_unit_of_measurement_fn(
+                    self.coordinator.data
+                )
         except (TypeError, IndexError, ValueError):
             # No data available - defaulting to Netherlands Unit
             self.native_unit_of_measurement = f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}"

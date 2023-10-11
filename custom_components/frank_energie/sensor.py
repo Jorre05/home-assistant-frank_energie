@@ -41,7 +41,6 @@ from .const import (
     SERVICE_NAME_PRICES,
     SERVICE_NAME_COSTS,
     CONF_COUNTRY_BELGIUM,
-    CONF_COUNTRY_NETHERLANDS
 )
 from .coordinator import FrankEnergieCoordinator
 
@@ -345,7 +344,9 @@ class FrankEnergieSensor(CoordinatorEntity, SensorEntity):
         if description.service_name is SERVICE_NAME_PRICES:
             device_info_identifiers = {(DOMAIN, f"{entry.entry_id}")}
         else:
-            device_info_identifiers = {(DOMAIN, f"{entry.entry_id}", description.service_name)}
+            device_info_identifiers = {
+                (DOMAIN, f"{entry.entry_id}", description.service_name)
+            }
 
         self._attr_device_info = DeviceInfo(
             identifiers=device_info_identifiers,
@@ -370,15 +371,19 @@ class FrankEnergieSensor(CoordinatorEntity, SensorEntity):
             # No data available
             self._attr_native_value = None
 
-        # Set correct unit for Gas prices
+            # Set correct unit for Gas prices
         try:
             if self.entity_description.native_unit_of_measurement_fn is not None:
-                self.native_unit_of_measurement = self.entity_description.native_unit_of_measurement_fn(
-                    self.coordinator.data
+                self._attr_native_unit_of_measurement = (
+                    self.entity_description.native_unit_of_measurement_fn(
+                        self.coordinator.data
+                    )
                 )
         except (TypeError, IndexError, ValueError):
             # No data available - defaulting to Netherlands Unit
-            self.native_unit_of_measurement = f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}"
+            self._attr_native_unit_of_measurement = (
+                f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}"
+            )
 
         # Cancel the currently scheduled event if there is any
         if self._unsub_update:

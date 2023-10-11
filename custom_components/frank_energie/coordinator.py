@@ -7,7 +7,7 @@ from typing import TypedDict
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN
+from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN, CONF_COUNTRY
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from python_frank_energie import FrankEnergie
@@ -95,6 +95,7 @@ class FrankEnergieCoordinator(DataUpdateCoordinator):
             DATA_GAS: prices_today.gas + prices_tomorrow.gas,
             DATA_MONTH_SUMMARY: data_month_summary,
             DATA_INVOICES: data_invoices,
+            CONF_COUNTRY: self.api._country.value,
         }
 
     async def __fetch_prices_with_fallback(self, start_date: date, end_date: date) -> MarketPrices:

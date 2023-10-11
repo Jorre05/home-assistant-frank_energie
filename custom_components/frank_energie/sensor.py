@@ -17,6 +17,7 @@ from homeassistant.const import (
     CURRENCY_EURO,
     ENERGY_KILO_WATT_HOUR,
     VOLUME_CUBIC_METERS,
+    CONF_COUNTRY,
 )
 from homeassistant.core import HassJob, HomeAssistant
 from homeassistant.helpers import event
@@ -39,6 +40,8 @@ from .const import (
     ICON,
     SERVICE_NAME_PRICES,
     SERVICE_NAME_COSTS,
+    CONF_COUNTRY_BELGIUM,
+    CONF_COUNTRY_NETHERLANDS
 )
 from .coordinator import FrankEnergieCoordinator
 
@@ -52,6 +55,7 @@ class FrankEnergieEntityDescription(SensorEntityDescription):
     authenticated: bool = False
     service_name: str | None = SERVICE_NAME_PRICES
     value_fn: Callable[[dict], StateType] = None
+    native_unit_of_measurement_fn = None
     attr_fn: Callable[[dict], dict[str, StateType | list]] = lambda _: {}
 
 
@@ -115,7 +119,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_markup",
         name="Current gas price (All-in)",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.total,
@@ -124,7 +128,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_market",
         name="Current gas market price",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.market_price,
@@ -133,7 +137,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_tax",
         name="Current gas price including tax",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.market_price_with_tax,
@@ -142,7 +146,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_tax_vat",
         name="Current gas VAT price",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.market_price_tax,
@@ -151,7 +155,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_sourcing",
         name="Current gas sourcing price",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.sourcing_markup_price,
@@ -160,7 +164,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_tax_only",
         name="Current gas tax only",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].current_hour.energy_tax_price,
@@ -169,7 +173,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_min",
         name="Lowest gas price today",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].today_min.total,
@@ -178,7 +182,7 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
     FrankEnergieEntityDescription(
         key="gas_max",
         name="Highest gas price today",
-        native_unit_of_measurement=f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}",
+        native_unit_of_measurement_fn=lambda data: f"{CURRENCY_EURO}/{ENERGY_KILO_WATT_HOUR if data[CONF_COUNTRY] == CONF_COUNTRY_BELGIUM else VOLUME_CUBIC_METERS}",
         suggested_display_precision=2,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data[DATA_GAS].today_max.total,
@@ -365,6 +369,15 @@ class FrankEnergieSensor(CoordinatorEntity, SensorEntity):
         except (TypeError, IndexError, ValueError):
             # No data available
             self._attr_native_value = None
+
+        # Set correct unit for Gas prices
+        try:
+            self.native_unit_of_measurement = self.entity_description.native_unit_of_measurement_fn(
+                self.coordinator.data
+            )
+        except (TypeError, IndexError, ValueError):
+            # No data available - defaulting to Netherlands Unit
+            self.native_unit_of_measurement = f"{CURRENCY_EURO}/{VOLUME_CUBIC_METERS}"
 
         # Cancel the currently scheduled event if there is any
         if self._unsub_update:

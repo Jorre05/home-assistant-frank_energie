@@ -18,7 +18,6 @@ from homeassistant.const import (
 )
 from homeassistant.data_entry_flow import FlowResult
 from python_frank_energie import FrankEnergie
-from python_frank_energie.frank_energie import FrankCountry
 from python_frank_energie.exceptions import AuthException
 
 
@@ -36,7 +35,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._reauth_entry = None
-        self._selectedCountry = FrankCountry.Netherlands
+        self._selectedCountry = CONF_COUNTRY_NETHERLANDS
 
     async def async_step_login(self, user_input=None, errors=None) -> FlowResult:
         """Handle login with credentials by user."""
@@ -106,12 +105,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
             return self.async_show_form(step_id="user", data_schema=data_schema)
-
-        frankCountries = {
-            CONF_COUNTRY_NETHERLANDS: FrankCountry.Netherlands,
-            CONF_COUNTRY_BELGIUM: FrankCountry.Belgium,
-        }
-        self._selectedCountry = frankCountries[user_input[CONF_COUNTRY]]
+        
+        self._selectedCountry = user_input[CONF_COUNTRY]
 
         if user_input[CONF_AUTHENTICATION]:
             return await self.async_step_login()
